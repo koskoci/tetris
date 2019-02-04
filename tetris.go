@@ -25,17 +25,17 @@ func main() {
 					exit()
 				case termbox.KeyArrowRight:
 					x = x + 2
-					Draw(x, y, r, `s`)
+					Draw(x, y, r, pick())
 				case termbox.KeyArrowLeft:
 					x = x - 2
-					Draw(x, y, r, `s`)
+					Draw(x, y, r, pick())
 				case termbox.KeyTab:
 					r = (r + 1) % 4
-					Draw(x, y, r, `s`)
+					Draw(x, y, r, pick())
 				}
 			}
 		default:
-			Draw(x, y, r, `s`)
+			Draw(x, y, r, pick())
 		}
 	}
 	exit()
