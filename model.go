@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/nsf/termbox-go"
 )
 
@@ -37,6 +38,8 @@ var board = func() shape {
 	return result
 }()
 
+var frozenPieces shape
+
 type tetromino struct {
 	label   string
 	configs []uint32
@@ -51,8 +54,9 @@ type piece struct {
 	p0        [2]int
 }
 
-func (p piece) move(vector [2]int) piece {
+func (p piece) move(vector [2]int) (piece, error) {
 	var result piece
+	var err error
 
 	desiredPiece := piece{
 		tetromino: p.tetromino,
@@ -64,12 +68,12 @@ func (p piece) move(vector [2]int) piece {
 	}
 
 	if overlap(board, desiredPiece.serialize()) {
-		result = p
+		result, err = p, errors.New("Cannot go there.")
 	} else {
-		result = desiredPiece
+		result, err = desiredPiece, nil
 	}
 
-	return result
+	return result, err
 }
 
 func (p piece) rotate() piece {
@@ -88,4 +92,11 @@ func (p piece) rotate() piece {
 	}
 
 	return result
+}
+
+func (p piece) freeze() {
+	myShape := p.serialize()
+	for _, pixel := range myShape {
+		frozenPieces = append(frozenPieces, pixel)
+	}
 }

@@ -6,48 +6,83 @@ import (
 	"time"
 )
 
+var kill bool
+
 func main() {
 	setup()
+	defer termbox.Close()
+
 	eventQueue := startQueue()
 	clock := startClock()
-	defer close(eventQueue)
-	defer close(clock)
 
-	myPiece := newPiece()
+	for {
+		if kill || gameOver() {
+			return
+		}
+		drop(newPiece(), clock, eventQueue)
+	}
+}
 
-mainloop:
+func gameOver() (result bool) {
+	for _, pixel := range frozenPieces {
+		if pixel[1] == boardY0+1 {
+			result = true
+		} else {
+			result = false
+		}
+	}
+	return
+}
+
+func drop(p piece, clock chan bool, eventQueue chan termbox.Event) {
 	for {
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		render(board, termbox.ColorWhite)
-		render(myPiece.serialize(), myPiece.tetromino.color)
+		render(frozenPieces, termbox.ColorWhite)
+		render(p.serialize(), p.tetromino.color)
 
 		termbox.Flush()
 		time.Sleep(100 * time.Millisecond)
 
 		select {
 		case <-clock:
-			myPiece = myPiece.move([2]int{0, 1})
+			var err error
+			p, err = p.move([2]int{0, 1})
+			if err != nil {
+				p.freeze()
+				return
+			}
+
 		case ev := <-eventQueue:
 			switch ev.Type {
 			case termbox.EventKey:
 				switch ev.Key {
 				case termbox.KeyEsc:
-					termbox.Interrupt()
+					kill = true
+					return
 				case termbox.KeyArrowRight:
-					myPiece = myPiece.move([2]int{2, 0})
+					p, _ = p.move([2]int{2, 0})
+
 				case termbox.KeyArrowLeft:
-					myPiece = myPiece.move([2]int{-2, 0})
+					p, _ = p.move([2]int{-2, 0})
+
 				case termbox.KeyArrowDown:
-					myPiece = myPiece.move([2]int{0, 2})
+					var err error
+					p, err = p.move([2]int{0, 1})
+					if err != nil {
+						p.freeze()
+						return
+					}
+
 				case termbox.KeyTab:
-					myPiece = myPiece.rotate()
+					p = p.rotate()
 				}
-			case termbox.EventInterrupt:
-				break mainloop
+
+			case termbox.EventError:
+				panic(ev.Err)
 			}
 		}
 	}
-	termbox.Close()
 }
 
 func setup() {
