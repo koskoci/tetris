@@ -6,17 +6,19 @@ import (
 	"time"
 )
 
-var width, height int
-var x0, y0 = 5, 5
-var pieces = []string{`i`, `j`, `l`, `o`, `s`, `t`, `z`}
-
 func main() {
 	setup()
 	eventQueue := listen()
+	myPiece := newPiece()
 
-	x := x0 + 9
-	r := 0
-	for y := y0; y < y0+20; y++ {
+	for {
+		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+		render(board, termbox.ColorWhite)
+		render(myPiece.serialize(), myPiece.tetromino.color)
+
+		termbox.Flush()
+		time.Sleep(100 * time.Millisecond)
+
 		select {
 		case ev := <-eventQueue:
 			if ev.Type == termbox.EventKey {
@@ -24,21 +26,17 @@ func main() {
 				case termbox.KeyEsc:
 					exit()
 				case termbox.KeyArrowRight:
-					x = x + 2
-					Draw(x, y, r, pick())
+					myPiece = myPiece.move([2]int{2, 0})
 				case termbox.KeyArrowLeft:
-					x = x - 2
-					Draw(x, y, r, pick())
+					myPiece = myPiece.move([2]int{-2, 0})
+				case termbox.KeyArrowDown:
+					myPiece = myPiece.move([2]int{0, 2})
 				case termbox.KeyTab:
-					r = (r + 1) % 4
-					Draw(x, y, r, pick())
+					myPiece = myPiece.rotate()
 				}
 			}
-		default:
-			Draw(x, y, r, pick())
 		}
 	}
-	exit()
 }
 
 func setup() {
@@ -46,8 +44,6 @@ func setup() {
 	if err != nil {
 		panic(err)
 	}
-
-	width, height = termbox.Size()
 }
 
 func listen() (eventQueue chan termbox.Event) {
@@ -65,8 +61,16 @@ func exit() {
 	termbox.Close()
 }
 
-func pick() (s string) {
+func pick() tetromino {
 	rand.Seed(time.Now().Unix())
-	index := rand.Intn(len(pieces))
-	return pieces[index]
+	index := rand.Intn(len(tetrominos))
+	return tetrominos[index]
+}
+
+func newPiece() piece {
+	return piece{
+		tetromino: pick(),
+		rot:       0,
+		p0:        [2]int{boardX0 + width/2, boardY0 + 1},
+	}
 }
