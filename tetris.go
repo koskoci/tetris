@@ -39,6 +39,7 @@ func drop(p piece, clock chan bool, eventQueue chan termbox.Event) {
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		render(board, termbox.ColorWhite)
 		render(frozenPieces, termbox.ColorWhite)
+		render(frozenPieces.fullRows(), termbox.ColorMagenta)
 		render(p.serialize(), p.tetromino.color)
 
 		termbox.Flush()
@@ -125,6 +126,6 @@ func newPiece() piece {
 	return piece{
 		tetromino: pick(),
 		rot:       0,
-		p0:        [2]int{boardX0 + width/2, boardY0 + 1},
+		p0:        [2]int{boardX0 + width/2 - 2, boardY0 + 1},
 	}
 }

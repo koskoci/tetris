@@ -104,3 +104,20 @@ func (p piece) freeze() {
 		frozenPieces = append(frozenPieces, pixel)
 	}
 }
+
+func (s shape) fullRows() shape {
+	rowTally := make(map[int][][2]int)
+	var fullRows shape
+
+	for _, v := range s {
+		rowTally[v[1]] = append(rowTally[v[1]], v)
+	}
+
+	for _, v := range rowTally {
+		if len(v) == 20 {
+			fullRows = append(fullRows, v...)
+		}
+	}
+
+	return fullRows
+}
