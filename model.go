@@ -54,6 +54,10 @@ type piece struct {
 	p0        [2]int
 }
 
+func environment() shape {
+	return append(board, frozenPieces...)
+}
+
 func (p piece) move(vector [2]int) (piece, error) {
 	var result piece
 	var err error
@@ -67,8 +71,8 @@ func (p piece) move(vector [2]int) (piece, error) {
 		},
 	}
 
-	if overlap(board, desiredPiece.serialize()) {
-		result, err = p, errors.New("Cannot go there.")
+	if overlap(environment(), desiredPiece.serialize()) {
+		result, err = p, errors.New("cannot go there")
 	} else {
 		result, err = desiredPiece, nil
 	}
@@ -85,7 +89,7 @@ func (p piece) rotate() piece {
 		p0:        p.p0,
 	}
 
-	if overlap(board, desiredPiece.serialize()) {
+	if overlap(environment(), desiredPiece.serialize()) {
 		result = p
 	} else {
 		result = desiredPiece
