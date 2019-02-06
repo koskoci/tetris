@@ -8,9 +8,14 @@ import (
 
 func main() {
 	setup()
-	eventQueue := listen()
+	eventQueue := startQueue()
+	clock := startClock()
+	defer close(eventQueue)
+	defer close(clock)
+
 	myPiece := newPiece()
 
+mainloop:
 	for {
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		render(board, termbox.ColorWhite)
@@ -20,11 +25,14 @@ func main() {
 		time.Sleep(100 * time.Millisecond)
 
 		select {
+		case <-clock:
+			myPiece = myPiece.move([2]int{0, 1})
 		case ev := <-eventQueue:
-			if ev.Type == termbox.EventKey {
+			switch ev.Type {
+			case termbox.EventKey:
 				switch ev.Key {
 				case termbox.KeyEsc:
-					exit()
+					termbox.Interrupt()
 				case termbox.KeyArrowRight:
 					myPiece = myPiece.move([2]int{2, 0})
 				case termbox.KeyArrowLeft:
@@ -34,9 +42,12 @@ func main() {
 				case termbox.KeyTab:
 					myPiece = myPiece.rotate()
 				}
+			case termbox.EventInterrupt:
+				break mainloop
 			}
 		}
 	}
+	termbox.Close()
 }
 
 func setup() {
@@ -46,8 +57,8 @@ func setup() {
 	}
 }
 
-func listen() (eventQueue chan termbox.Event) {
-	eventQueue = make(chan termbox.Event)
+func startQueue() chan termbox.Event {
+	eventQueue := make(chan termbox.Event)
 	go func() {
 		for {
 			eventQueue <- termbox.PollEvent()
@@ -57,8 +68,16 @@ func listen() (eventQueue chan termbox.Event) {
 	return eventQueue
 }
 
-func exit() {
-	termbox.Close()
+func startClock() chan bool {
+	clock := make(chan bool)
+	go func() {
+		for {
+			time.Sleep(300 * time.Millisecond)
+			clock <- true
+		}
+	}()
+
+	return clock
 }
 
 func pick() tetromino {
