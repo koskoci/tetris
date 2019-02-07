@@ -24,8 +24,8 @@ func main() {
 }
 
 func gameOver() (result bool) {
-	for _, pixel := range frozenPieces {
-		if pixel[1] == boardY0+1 {
+	for _, pixel := range frozenPixels {
+		if pixel[1] == boardY0+2 {
 			result = true
 		} else {
 			result = false
@@ -38,8 +38,14 @@ func drop(p piece, clock chan bool, eventQueue chan termbox.Event) {
 	for {
 		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 		render(board, termbox.ColorWhite)
-		render(frozenPieces, termbox.ColorWhite)
-		render(frozenPieces.fullRows(), termbox.ColorMagenta)
+		render(frozenPixels, termbox.ColorWhite)
+
+		fullRows := frozenPixels.fullRows()
+		if len(fullRows) > 0 {
+			render(fullRows, termbox.ColorMagenta)
+			time.Sleep(50 * time.Millisecond)
+			fullRows.explode()
+		}
 		render(p.serialize(), p.tetromino.color)
 
 		termbox.Flush()

@@ -38,7 +38,7 @@ var board = func() shape {
 	return result
 }()
 
-var frozenPieces shape
+var frozenPixels shape
 
 type tetromino struct {
 	label   string
@@ -55,7 +55,7 @@ type piece struct {
 }
 
 func environment() shape {
-	return append(board, frozenPieces...)
+	return append(board, frozenPixels...)
 }
 
 func (p piece) move(vector [2]int) (piece, error) {
@@ -101,7 +101,7 @@ func (p piece) rotate() piece {
 func (p piece) freeze() {
 	myShape := p.serialize()
 	for _, pixel := range myShape {
-		frozenPieces = append(frozenPieces, pixel)
+		frozenPixels = append(frozenPixels, pixel)
 	}
 }
 
@@ -120,4 +120,47 @@ func (s shape) fullRows() shape {
 	}
 
 	return fullRows
+}
+
+func (s shape) explode() {
+	rowIndices := make(map[int]bool, 0)
+
+	for _, v := range s {
+		rowIndices[v[1]] = true
+	}
+
+	frozenPixels = frozenPixels.subtractShape(s)
+
+	for y, _ := range rowIndices {
+		for i, v := range frozenPixels {
+			if v[1] < y {
+				frozenPixels[i][1]++
+			}
+		}
+	}
+}
+
+func index(s shape, p [2]int) int {
+	for i, v := range s {
+		if v == p {
+			return i
+		}
+	}
+	return -1
+}
+
+func (s shape) subtractShape(z shape) shape {
+	for _, v := range z {
+		s = s.subtractPixel(v)
+	}
+	return s
+}
+
+func (s shape) subtractPixel(p [2]int) shape {
+	result := make([][2]int, len(s))
+	copy(result, s)
+
+	i := index(result, p)
+	result = append(result[:i], result[i+1:]...)
+	return result
 }
