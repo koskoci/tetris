@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+const boardX0 = 3
+const boardY0 = 3
+const width = 24
+const height = 22
+
+var start = [2]int{boardX0 + width/2 - 2, boardY0 + 1}
+
 var kill bool
 
 func main() {
@@ -36,20 +43,7 @@ func gameOver() (result bool) {
 
 func drop(p piece, clock chan bool, eventQueue chan termbox.Event) {
 	for {
-		termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-		render(board, termbox.ColorWhite)
-		render(frozenPixels, termbox.ColorWhite)
-
-		fullRows := frozenPixels.fullRows()
-		if len(fullRows) > 0 {
-			render(fullRows, termbox.ColorMagenta)
-			time.Sleep(50 * time.Millisecond)
-			fullRows.explode()
-		}
-		render(p.serialize(), p.tetromino.color)
-
-		termbox.Flush()
-		time.Sleep(100 * time.Millisecond)
+		renderAll(p)
 
 		select {
 		case <-clock:
@@ -59,7 +53,6 @@ func drop(p piece, clock chan bool, eventQueue chan termbox.Event) {
 				p.freeze()
 				return
 			}
-
 		case ev := <-eventQueue:
 			switch ev.Type {
 			case termbox.EventKey:
@@ -69,10 +62,8 @@ func drop(p piece, clock chan bool, eventQueue chan termbox.Event) {
 					return
 				case termbox.KeyArrowRight:
 					p, _ = p.move([2]int{2, 0})
-
 				case termbox.KeyArrowLeft:
 					p, _ = p.move([2]int{-2, 0})
-
 				case termbox.KeyArrowDown:
 					var err error
 					p, err = p.move([2]int{0, 1})
@@ -80,16 +71,48 @@ func drop(p piece, clock chan bool, eventQueue chan termbox.Event) {
 						p.freeze()
 						return
 					}
-
 				case termbox.KeyTab:
 					p = p.rotate()
 				}
-
 			case termbox.EventError:
 				panic(ev.Err)
 			}
 		}
 	}
+}
+
+func renderAll(p piece) {
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+
+	renderBoard()
+	renderFrozenPixels()
+	handleFullRows()
+	renderPiece(p)
+
+	termbox.Flush()
+	time.Sleep(100 * time.Millisecond)
+}
+
+func handleFullRows() {
+	fullRows := frozenPixels.fullRows()
+
+	if len(fullRows) > 0 {
+		fullRows.render(termbox.ColorMagenta)
+		time.Sleep(50 * time.Millisecond)
+		fullRows.explode()
+	}
+}
+
+func renderBoard() {
+	board.render(termbox.ColorWhite)
+}
+
+func renderFrozenPixels() {
+	frozenPixels.render(termbox.ColorWhite)
+}
+
+func renderPiece(p piece) {
+	p.serialize().render(p.tetromino.color)
 }
 
 func setup() {
@@ -132,6 +155,6 @@ func newPiece() piece {
 	return piece{
 		tetromino: pick(),
 		rot:       0,
-		p0:        [2]int{boardX0 + width/2 - 2, boardY0 + 1},
+		p0:        start,
 	}
 }
