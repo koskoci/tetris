@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/nsf/termbox-go"
+	"sort"
 )
 
 const boardX0 = 3
@@ -123,15 +125,19 @@ func (s shape) fullRows() shape {
 }
 
 func (s shape) explode() {
-	rowIndices := make(map[int]bool, 0)
+	rowIndices := make([]int, 0)
 
-	for _, v := range s {
-		rowIndices[v[1]] = true
+	for _, pixel := range s {
+		y := pixel[1]
+		if !includes(rowIndices, y) {
+			rowIndices = append(rowIndices, y)
+		}
 	}
+	sort.Ints(rowIndices)
 
 	frozenPixels = frozenPixels.subtractShape(s)
 
-	for y, _ := range rowIndices {
+	for _, y := range rowIndices {
 		for i, v := range frozenPixels {
 			if v[1] < y {
 				frozenPixels[i][1]++
@@ -141,26 +147,35 @@ func (s shape) explode() {
 }
 
 func index(s shape, p [2]int) int {
-	for i, v := range s {
-		if v == p {
+	for i, pixel := range s {
+		if pixel == p {
 			return i
 		}
 	}
 	return -1
 }
 
+func includes(x []int, n int) bool {
+	for _, m := range x {
+		if m == n {
+			return true
+		}
+	}
+	return false
+}
+
 func (s shape) subtractShape(z shape) shape {
-	for _, v := range z {
-		s = s.subtractPixel(v)
+	for _, pixel := range z {
+		s = s.subtractPixel(pixel)
 	}
 	return s
 }
 
-func (s shape) subtractPixel(p [2]int) shape {
+func (s shape) subtractPixel(pixel [2]int) shape {
 	result := make([][2]int, len(s))
 	copy(result, s)
 
-	i := index(result, p)
+	i := index(result, pixel)
 	result = append(result[:i], result[i+1:]...)
 	return result
 }
